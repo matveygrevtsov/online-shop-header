@@ -3,6 +3,45 @@ const HtmlWebpackPlugin = require("html-webpack-plugin");
 const { ModuleFederationPlugin } = require("webpack").container;
 const deps = require("./package.json").dependencies;
 
+const {
+  NativeFederationTypeScriptRemote,
+} = require("@module-federation/native-federation-typescript/webpack");
+
+const {
+  NativeFederationTestsRemote,
+} = require("@module-federation/native-federation-tests/webpack");
+
+const moduleFederationConfig = {
+  name: "header",
+  filename: "remoteEntry.js",
+  exposes: {
+    "./Header": "./src/components/Header",
+  },
+  shared: {
+    ...deps,
+    react: {
+      singleton: true,
+      requiredVersion: deps.react,
+      eager: true,
+    },
+    "react-dom": {
+      singleton: true,
+      requiredVersion: deps["react-dom"],
+      eager: true,
+    },
+    "react-router-dom": {
+      singleton: true,
+      requiredVersion: deps["react-router-dom"],
+      eager: true,
+    },
+    antd: {
+      singleton: true,
+      requiredVersion: deps.antd,
+      eager: true,
+    },
+  },
+};
+
 module.exports = {
   mode: "development",
   //   entry: path.resolve(__dirname, "src/index.ts"), // Входной файл
@@ -39,35 +78,11 @@ module.exports = {
     new HtmlWebpackPlugin({
       template: "./public/index.html",
     }),
-    new ModuleFederationPlugin({
-      name: "header",
-      filename: "remoteEntry.js",
-      exposes: {
-        "./Header": "./src/components/Header",
-      },
-      shared: {
-        ...deps,
-        react: {
-          singleton: true,
-          requiredVersion: deps.react,
-          eager: true,
-        },
-        "react-dom": {
-          singleton: true,
-          requiredVersion: deps["react-dom"],
-          eager: true,
-        },
-        "react-router-dom": {
-          singleton: true,
-          requiredVersion: deps["react-router-dom"],
-          eager: true,
-        },
-        antd: {
-          singleton: true,
-          requiredVersion: deps.antd,
-          eager: true,
-        },
-      }
+    new ModuleFederationPlugin(moduleFederationConfig),
+    NativeFederationTypeScriptRemote({ moduleFederationConfig }),
+    NativeFederationTestsRemote({
+      moduleFederationConfig,
+      additionalBundlerConfig: { format: "esm" },
     }),
   ],
   devServer: {
